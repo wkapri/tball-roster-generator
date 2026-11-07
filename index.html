@@ -19,7 +19,7 @@ header{background:linear-gradient(135deg,var(--navy),var(--royal));color:#fff;pa
 main{max-width:760px;margin:0 auto;padding:16px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
 .panel h2{margin:0;font-size:24px}
-.head{display:flex;justify-content:space-between;align-items:center}.head .link{min-height:36px}
+.head{display:flex;justify-content:space-between;align-items:center}.head .link{min-height:34px}.acts{display:flex;flex-direction:column;align-items:flex-end}
 .panel .head~p.away,.panel .head~p.err{margin-top:8px}
 .panel p{margin:0 0 12px;color:var(--mute)}
 .chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
@@ -66,7 +66,6 @@ button.pos{border:0;width:100%;font-family:inherit;cursor:pointer}
 .sheet{width:100%;max-width:420px;max-height:90vh;overflow:auto;margin:0}.sheet .bar{margin-top:8px}.sheet small{font-weight:400;opacity:.8}
 button.x{background:none;border:0;color:var(--mute);font-size:30px;line-height:1;min-width:44px;min-height:44px;cursor:pointer}
 p.bench span.o{background:var(--line);color:var(--mute)}
-footer{max-width:760px;margin:0 auto;padding:0 16px 24px;text-align:right}
 </style>
 </head>
 <body>
@@ -74,7 +73,7 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 24px;text-align:right}
 <svg viewBox="0 0 24 32" aria-hidden="true"><polygon points="14,1 2,18 10,18 7,31 22,12 13,12" fill="#ffc81f" stroke="#0a1b3d" stroke-width="2" stroke-linejoin="round"/></svg>
 <div><h1 class="disp">Thornleigh Thunderbolts</h1><p>Game-day lineup</p></div></div></header>
 <main id="app"></main>
-<footer><button class="link" id="rs">Reset game</button></footer>
+
 <script>
 const PLAYERS = ['Alex','Leo','Alistair','Gus','Harrison','Hamish','Luca','Liam','Caspar','Prim','Jian'];
 const POSITIONS = ['Pitcher','Catcher','1st Base','2nd Base','3rd Base','Shortstop','Left Field','Centrefield','Right Field'];
@@ -327,10 +326,11 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
   const outs = showField ? Object.keys(fm).filter(p => fm[p] === 'Out') : [];
   const chips = (label, list, cls) => list.length ? `<p class="bench">${label}: ${list.map(p => `<span class="${cls}">${p}</span>`).join('')}</p>` : '';
   const main = showField ? fieldSvg(fm) + chips('Bench', benched, '') + chips('Out', outs, 'o') : `<table><thead>${head}</thead><tbody>${body}</tbody></table>${sheet}`;
-  app.innerHTML = `<section class="panel"><div class="head"><h2 class="disp">${title}</h2><button class="link" id="un">Undo</button></div>${err}${away}
+  app.innerHTML = `<section class="panel"><div class="head"><h2 class="disp">${title}</h2><div class="acts"><button class="link" id="un">Undo</button><button class="link" id="rs">Reset</button></div></div>${err}${away}
     ${s.pending ? `<div class="bar"><button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button></div>` : ''}</section><div id="v" style="min-height:${keepH || 0}px">${toggle}${main}</div>`;
   const on = (id, f) => { const e = app.querySelector(id); if (e) e.onclick = f; };
   on('#ac', accept); on('#rg', regenerate); on('#un', undo);
+  on('#rs', () => { if (confirm('Clear this game and start over?')) reset(); });
   app.querySelectorAll('[data-ci]').forEach(b => b.onclick = () => { const h = app.querySelector('#v').offsetHeight; const n = { i: +b.dataset.ci, p: b.dataset.p }; sel = sel && sel.i === n.i && sel.p === n.p ? null : n; render(h); });
   app.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { const { i, p } = sel; sel = null; applySub(i, p, b.dataset.sub || null); });
   on('#rv', () => { const i = sel.i; sel = null; revertInning(i); });
@@ -343,7 +343,6 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
 
 if (typeof document !== 'undefined') {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sel) { sel = null; render(); } });
-  document.getElementById('rs').onclick = () => { if (confirm('Clear this game and start over?')) reset(); };
   if (location.hash === '#test') {
     const r = runSelfTest();
     document.getElementById('app').innerHTML = `<section class="panel"><h2>${r.ok ? 'PASS' : 'FAIL'}</h2><pre>${r.failures.join('\n')}</pre></section>`;
