@@ -13,15 +13,15 @@ A single self-contained `index.html` (no build step, no dependencies, hosted on 
 - Rules, per game: no player benched more than once; no player plays the same position twice. These apply when lineups are generated. Manual sit-out edits (below) may break them.
 - Output table: columns Batting order, 1st, 2nd, 3rd, 4th; rows in batting order; cells hold positions.
 - Absent players are selected first (usually 0 to 2, sometimes more).
-- Every step (batting order, each inning) has Regenerate and Accept.
+- Every step (batting order, each inning) has Shuffle and Accept.
 - Reset clears everything for the next game.
 - The page remembers an in-progress game across refresh or sleep (`localStorage`).
 - Mobile-first, light and dark themes.
 
 ## Flow
 1. **Players:** tap player chips to mark absent; Continue.
-2. **Batting order:** random shuffle of present players; Regenerate / Accept.
-3. **Innings 1 to 4:** generated one at a time; Regenerate / Accept.
+2. **Batting order:** random shuffle of present players; Shuffle / Accept.
+3. **Innings 1 to 4:** generated one at a time; Shuffle / Accept.
 - Accepted steps are locked. **Undo** reopens the most recently accepted step. **Reset** (with confirm) clears the game. Undo and Reset sit side by side on the title row of the top panel.
 - There is no separate step indicator row; the panel title names the current step ("Batting order", "1st inning", "Lineup is set") and the Accept button is labelled to match ("Accept order", "Accept 2nd").
 
@@ -52,7 +52,7 @@ Used when a player is injured or needs a break during the game. Batting order is
 - The player who sits out shows as a grey "Out", separate from Bench. The substitute takes their position. An outfielder who covers leaves their own spot empty.
 - Edited cells carry a small dot. The popover for an edited inning offers "Undo change", which restores that inning to its original lineup.
 - Edits do not re-check or re-generate anything. If an edit leads to a repeated position or a second bench turn, that is accepted by design.
-- Regenerating an inning that is still being previewed clears its edits.
+- Shuffling an inning that is still being previewed clears its edits.
 
 ## Branding and visual direction
 - Team: **Thornleigh Thunderbolts** (Thornleigh Baseball Club, est. 1979).

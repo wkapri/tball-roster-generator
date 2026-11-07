@@ -327,7 +327,7 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
   const chips = (label, list, cls) => list.length ? `<p class="bench">${label}: ${list.map(p => `<span class="${cls}">${p}</span>`).join('')}</p>` : '';
   const main = showField ? fieldSvg(fm) + chips('Bench', benched, '') + chips('Out', outs, 'o') : `<table><thead>${head}</thead><tbody>${body}</tbody></table>${sheet}`;
   app.innerHTML = `<section class="panel"><div class="head"><h2 class="disp">${title}</h2><div class="acts"><button class="link" id="un">Undo</button><button class="link" id="rs">Reset</button></div></div>${err}${away}
-    ${s.pending ? `<div class="bar"><button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button></div>` : ''}</section><div id="v" style="min-height:${keepH || 0}px">${toggle}${main}</div>`;
+    ${s.pending ? `<div class="bar"><button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Shuffle</button></div>` : ''}</section><div id="v" style="min-height:${keepH || 0}px">${toggle}${main}</div>`;
   const on = (id, f) => { const e = app.querySelector(id); if (e) e.onclick = f; };
   on('#ac', accept); on('#rg', regenerate); on('#un', undo);
   on('#rs', () => { if (confirm('Clear this game and start over?')) reset(); });

@@ -7,8 +7,8 @@ A single-file web app that builds a T-ball game-day lineup: a random batting ord
 ## How to use
 
 1. Tap any players who are missing, then Continue.
-2. Accept or Regenerate the batting order.
-3. Accept or Regenerate each of the 4 innings.
+2. Accept or Shuffle the batting order.
+3. Accept or Shuffle each of the 4 innings.
 4. Use Undo to reopen the last accepted step. Use Reset to clear the game for next time. Both are at the top right of the panel. A page refresh keeps the game in progress.
 
 ### Table and field views
