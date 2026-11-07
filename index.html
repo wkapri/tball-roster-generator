@@ -49,8 +49,8 @@ td:first-child{text-align:left;padding-left:8px;font-weight:700;white-space:nowr
 .empty{color:var(--line)}
 .ab{display:inline}.fu{display:none}
 @media(min-width:560px){.ab{display:none}.fu{display:inline}.pos{font-size:13px;padding:8px 4px}th:first-child{width:24%}}
-.views{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap;align-items:center}.views .sp{flex:1}
-.pill{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.views{display:flex;gap:6px;margin:0 0 12px;align-items:center}.views .sp{flex:1}
+.pill{min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
 .pill.on{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
 .pill:disabled{opacity:.4;cursor:not-allowed}.pill:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .fld{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);background:var(--card)}
@@ -235,7 +235,7 @@ function fieldSvg(map) {
   return `<svg class="fld" viewBox="0 0 680 550" role="img" aria-label="Field positions"><path class="grass" d="M340 500 L40 200 A420 420 0 0 1 640 200 Z"/><path class="dirt" d="M340 470 L475 345 L340 220 L205 345 Z"/><g class="base"><rect x="333" y="463" width="14" height="14" rx="2"/><rect x="469" y="339" width="12" height="12" rx="2"/><rect x="334" y="214" width="12" height="12" rx="2"/><rect x="199" y="339" width="12" height="12" rx="2"/></g>${boxes}</svg>`;
 }
 
-function render() {
+function render(keepH) { // keepH: px height to hold the view area at, so toggling views doesn't shift the scroll position
   const app = document.getElementById('app');
   const s = state, atPlayers = s.order === null && !s.pending;
   const step = s.order === null ? (s.pending ? 1 : 0) : (s.pending || s.error ? s.innings.length + 2 : 6);
@@ -275,11 +275,11 @@ function render() {
   const benched = showField ? Object.keys(fm).filter(p => fm[p] === 'Bench') : [];
   const main = showField ? fieldSvg(fm) + (benched.length ? `<p class="bench">Bench: ${benched.map(p => `<span>${p}</span>`).join('')}</p>` : '') : `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
   app.innerHTML = stepper + `<section class="panel"><h2 class="disp">${title}</h2><p>${hint}</p>${err}${away}
-    <div class="bar">${s.pending ? `<button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button>` : ''}<button class="link" id="un">Undo</button></div></section>${toggle}${main}`;
+    <div class="bar">${s.pending ? `<button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button>` : ''}<button class="link" id="un">Undo</button></div></section><div id="v" style="min-height:${keepH || 0}px">${toggle}${main}</div>`;
   const on = (id, f) => { const e = app.querySelector(id); if (e) e.onclick = f; };
   on('#ac', accept); on('#rg', regenerate); on('#un', undo);
-  app.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { view = b.dataset.v; render(); });
-  app.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { fieldInn = +b.dataset.i; render(); });
+  app.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { const h = app.querySelector('#v').offsetHeight; view = b.dataset.v; render(h); });
+  app.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { const h = app.querySelector('#v').offsetHeight; fieldInn = +b.dataset.i; render(h); });
 }
 
 if (typeof document !== 'undefined') {
