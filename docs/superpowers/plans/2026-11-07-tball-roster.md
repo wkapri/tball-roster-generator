@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-07-tball-roster-design.md`
 
+> **Status:** all three tasks are done. The app has since grown beyond this plan: a Field view, sitting a player out for an inning, an alphabetical roster, and a streamlined top panel (no step row, Undo and Reset on the title row). Those changes were made as small follow-ups and are described in the spec, which is the current source of truth. The step list below is the original plan and is kept as history.
+
 ## Global Constraints
 
 - Single file `index.html`; no build step; no external scripts, fonts or images (inline SVG only). Must work offline.
