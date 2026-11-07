@@ -4,9 +4,60 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Thunderbolts Roster</title>
+<style>
+:root{--navy:#0a1b3d;--royal:#1550c9;--gold:#ffc81f;--bg:#f3f5fa;--card:#fff;--ink:#0a1b3d;--mute:#5b6784;--line:#d8deeb;--bat:#ffc81f;--bat-ink:#3b2a00;--in:#1550c9;--in-ink:#fff;--out:#0f8a7e;--out-ink:#fff;--bench:#f6d9d9;--bench-ink:#a32020}
+@media(prefers-color-scheme:dark){:root{--bg:#07122b;--card:#0e2048;--ink:#eef2fb;--mute:#9fb0d4;--line:#1f3566;--bench:#4a1f27;--bench-ink:#ff9d9d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.disp{font-family:Bahnschrift,"Arial Narrow","Roboto Condensed","Franklin Gothic Medium",system-ui,sans-serif;font-weight:800;font-style:italic;letter-spacing:.01em}
+header{background:linear-gradient(135deg,var(--navy),var(--royal));color:#fff;padding:14px 16px;border-bottom:4px solid var(--gold)}
+.brand{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.brand svg{width:34px;height:44px;flex:none}
+.brand h1{margin:0;font-size:clamp(22px,6vw,32px);line-height:1;text-transform:uppercase}
+.brand p{margin:2px 0 0;font-size:13px;opacity:.85}
+main{max-width:760px;margin:0 auto;padding:16px}
+.steps{display:flex;gap:6px;margin:0 0 14px;padding:0;list-style:none}
+.steps li{flex:1;text-align:center;font-size:12px;padding:6px 2px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mute)}
+.steps li.done{background:var(--royal);border-color:var(--royal);color:#fff}
+.steps li.now{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.panel h2{margin:0 0 4px;font-size:24px}
+.panel p{margin:0 0 12px;color:var(--mute)}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.chip{min-height:48px;border-radius:12px;border:2px solid var(--royal);background:var(--royal);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.chip[aria-pressed=true]{background:transparent;color:var(--mute);border-style:dashed;border-color:var(--line);text-decoration:line-through}
+.panel p.away{margin:0 0 10px;font-size:14px}
+.away b{color:var(--ink);font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
+button.btn{min-height:48px;padding:0 20px;border-radius:12px;border:2px solid var(--royal);background:transparent;color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+button.btn.go{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+button.link{background:none;border:0;color:var(--mute);font:inherit;text-decoration:underline;min-height:48px;padding:0 8px;cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.panel p.err{background:var(--bench);color:var(--bench-ink);border-radius:10px;padding:10px 12px;font-weight:600}
+table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;table-layout:fixed}
+th{background:var(--navy);color:#fff;padding:10px 4px;font-size:15px;text-align:center}
+th:first-child{text-align:left;padding-left:10px;width:30%}
+th.pv{background:var(--gold);color:var(--navy)}
+td{padding:6px 3px;border-top:1px solid var(--line);text-align:center;height:46px}
+td.pv,tr.pv td{background:rgba(255,200,31,.18)}
+td:first-child{text-align:left;padding-left:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.no{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--navy);color:var(--gold);font-size:12px;margin-right:6px}
+@media(prefers-color-scheme:dark){.no{background:var(--gold);color:var(--navy)}}
+.pos{display:block;padding:6px 2px;border-radius:8px;font-size:11px;font-weight:700;line-height:1.1}
+.pos.bat{background:var(--bat);color:var(--bat-ink)}.pos.in{background:var(--in);color:var(--in-ink)}.pos.out{background:var(--out);color:var(--out-ink)}.pos.bench{background:var(--bench);color:var(--bench-ink)}
+.empty{color:var(--line)}
+.ab{display:inline}.fu{display:none}
+@media(min-width:560px){.ab{display:none}.fu{display:inline}.pos{font-size:13px;padding:8px 4px}th:first-child{width:24%}}
+footer{max-width:760px;margin:0 auto;padding:0 16px 24px;text-align:right}
+</style>
 </head>
 <body>
-<div id="app"></div>
+<header><div class="brand">
+<svg viewBox="0 0 24 32" aria-hidden="true"><polygon points="14,1 2,18 10,18 7,31 22,12 13,12" fill="#ffc81f" stroke="#0a1b3d" stroke-width="2" stroke-linejoin="round"/></svg>
+<div><h1 class="disp">Thornleigh Thunderbolts</h1><p>Game-day lineup</p></div></div></header>
+<main id="app"></main>
+<footer><button class="link" id="rs">Reset game</button></footer>
 <script>
 const PLAYERS = ['Alex','Leo','Alistair','Gus','Harrison','Hamish','Luca','Liam','Caspar','Prim','Jian'];
 const POSITIONS = ['Pitcher','Catcher','1st Base','2nd Base','3rd Base','Shortstop','Left Field','Centrefield','Right Field'];
@@ -52,7 +103,63 @@ function genInning(present, history) {
   return fill(0) ? out : null;
 }
 
+const KEY = 'tball-roster-v1';
+const MIN_PLAYERS = 6;
+const fresh = () => ({ absent: [], order: null, innings: [], pending: null, error: null });
+let state = fresh();
+let lastAccept = 0;
+const present = () => PLAYERS.filter(p => !state.absent.includes(p));
+
+function load(raw) {
+  try {
+    if (raw === undefined) raw = localStorage.getItem(KEY);
+    const s = JSON.parse(raw);
+    const ok = s && Array.isArray(s.absent) && Array.isArray(s.innings) && (s.order === null || Array.isArray(s.order));
+    state = ok ? { ...fresh(), ...s } : fresh();
+  } catch { state = fresh(); }
+}
+let testing = false;
+function save() { if (testing) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+function commit() { save(); if (typeof render === 'function') render(); }
+
+function nextInning() {
+  const r = genInning(present(), state.innings);
+  state.error = r ? null : "Can't fill every position without repeating one. Undo and try again.";
+  return r;
+}
+function toggleAbsent(name) {
+  if (state.order !== null || state.pending) return;
+  const i = state.absent.indexOf(name);
+  if (i < 0) state.absent.push(name); else state.absent.splice(i, 1);
+  state.error = null; commit();
+}
+function startGame() {
+  if (present().length < MIN_PLAYERS) { state.error = `Need at least ${MIN_PLAYERS} players.`; return commit(); }
+  state.error = null; state.pending = genOrder(present()); commit();
+}
+function regenerate() {
+  if (!state.pending && !state.error) return;
+  state.pending = state.order === null ? genOrder(present()) : nextInning();
+  commit();
+}
+function accept() {
+  if (!state.pending || Date.now() - lastAccept < 400) return; // ignore double-tap
+  lastAccept = Date.now();
+  if (state.order === null) { state.order = state.pending; state.pending = nextInning(); }
+  else { state.innings.push(state.pending); state.pending = state.innings.length < 4 ? nextInning() : null; }
+  commit();
+}
+function undo() {
+  state.error = null;
+  if (state.innings.length) state.pending = state.innings.pop();
+  else if (state.order) { state.pending = state.order; state.order = null; }
+  else state.pending = null;
+  commit();
+}
+function reset() { state = fresh(); commit(); }
+
 function runSelfTest() {
+  testing = true;
   const failures = [];
   const fail = (m) => { if (failures.length < 20) failures.push(m); };
   for (let n = 6; n <= 11; n++) {
@@ -81,7 +188,73 @@ function runSelfTest() {
       }
     }
   }
+  // state layer
+  const check = (c, m) => { if (!c) fail(m); };
+  state = fresh(); PLAYERS.slice(0, 6).forEach(toggleAbsent); startGame();
+  check(state.error && state.order === null && !state.pending, 'fewer than 6 present must error');
+  state = fresh(); startGame(); accept(); accept();
+  check(state.order && state.innings.length === 0, 'double accept must not add inning');
+  lastAccept = 0; accept();
+  check(state.innings.length === 1, 'accept adds inning');
+  undo();
+  check(state.innings.length === 0 && state.pending && state.order, 'undo reopens inning');
+  for (let i = 0; i < 4; i++) { lastAccept = 0; accept(); }
+  check(state.innings.length === 4 && state.pending === null, 'four innings then done');
+  reset(); check(JSON.stringify(state) === JSON.stringify(fresh()), 'reset');
+  load('{bad'); check(JSON.stringify(state) === JSON.stringify(fresh()), 'garbage json');
+  load('{"absent":"x","innings":[]}'); check(JSON.stringify(state) === JSON.stringify(fresh()), 'bad shape');
+  state = fresh(); testing = false;
   return { ok: failures.length === 0, failures };
+}
+const ZONE = { Pitcher: 'bat', Catcher: 'bat', '1st Base': 'in', '2nd Base': 'in', '3rd Base': 'in', Shortstop: 'in', 'Left Field': 'out', Centrefield: 'out', 'Right Field': 'out', Bench: 'bench' };
+const ABBR = { Pitcher: 'P', Catcher: 'C', '1st Base': '1B', '2nd Base': '2B', '3rd Base': '3B', Shortstop: 'SS', 'Left Field': 'LF', Centrefield: 'CF', 'Right Field': 'RF', Bench: 'Bench' };
+const ORD = ['1st', '2nd', '3rd', '4th'];
+
+function render() {
+  const app = document.getElementById('app');
+  const s = state, atPlayers = s.order === null && !s.pending;
+  const step = s.order === null ? (s.pending ? 1 : 0) : (s.pending || s.error ? s.innings.length + 2 : 6);
+  const labels = ['Players', 'Order', ...ORD];
+  const stepper = '<ol class="steps">' + labels.map((l, i) => `<li class="${i < step ? 'done' : i === step ? 'now' : ''}">${l}</li>`).join('') + '</ol>';
+  const err = s.error ? `<p class="err" role="alert">${s.error}</p>` : '';
+  if (atPlayers) {
+    const n = present().length;
+    app.innerHTML = stepper + `<section class="panel"><h2 class="disp">Who's here today?</h2><p>Tap anyone who's missing.</p>${err}
+      <div class="chips">${PLAYERS.map(p => `<button class="chip" aria-pressed="${s.absent.includes(p)}" data-p="${p}">${p}</button>`).join('')}</div>
+      <div class="bar"><button class="btn go" id="go" ${n < MIN_PLAYERS ? 'disabled' : ''}>Continue with ${n} players</button></div></section>`;
+    app.querySelectorAll('.chip').forEach(b => b.onclick = () => toggleAbsent(b.dataset.p));
+    app.querySelector('#go').onclick = startGame;
+    return;
+  }
+  const rows = s.order || s.pending || [];
+  const inn = s.order === null ? -1 : s.innings.length;
+  const head = `<tr><th>Batting order</th>${ORD.map((o, i) => `<th class="${i === inn && s.pending ? 'pv' : ''}">${o}</th>`).join('')}</tr>`;
+  const cell = (p, i) => {
+    const m = i < s.innings.length ? s.innings[i] : (i === inn ? s.pending : null);
+    const v = m && m[p];
+    const pv = i === inn && s.pending ? 'pv' : '';
+    return v ? `<td class="${pv}"><span class="pos ${ZONE[v]}"><span class="fu">${v}</span><span class="ab">${ABBR[v]}</span></span></td>` : `<td class="${pv}"><span class="empty">–</span></td>`;
+  };
+  const body = rows.map((p, r) => `<tr class="${s.order === null ? 'pv' : ''}"><td><span class="no">${r + 1}</span>${p}</td>${ORD.map((_, i) => cell(p, i)).join('')}</tr>`).join('');
+  const away = s.absent.length ? `<p class="away">Out today: <b>${s.absent.join(', ')}</b></p>` : '';
+  let title, hint, acceptLabel;
+  if (s.order === null) { title = 'Batting order'; hint = 'Accept it, or regenerate for a new one.'; acceptLabel = 'Accept order'; }
+  else if (s.pending || s.error) { title = `${ORD[inn]} inning`; hint = 'Accept it, or regenerate for a new one.'; acceptLabel = `Accept ${ORD[inn]} inning`; }
+  else { title = 'Lineup is set'; hint = 'Good luck, Thunderbolts!'; }
+  app.innerHTML = stepper + `<section class="panel"><h2 class="disp">${title}</h2><p>${hint}</p>${err}${away}
+    <div class="bar">${s.pending ? `<button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button>` : ''}<button class="link" id="un">Undo</button></div></section>
+    <table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  const on = (id, f) => { const e = app.querySelector(id); if (e) e.onclick = f; };
+  on('#ac', accept); on('#rg', regenerate); on('#un', undo);
+}
+
+if (typeof document !== 'undefined') {
+  document.getElementById('rs').onclick = () => { if (confirm('Clear this game and start over?')) reset(); };
+  if (location.hash === '#test') {
+    const r = runSelfTest();
+    document.getElementById('app').innerHTML = `<section class="panel"><h2>${r.ok ? 'PASS' : 'FAIL'}</h2><pre>${r.failures.join('\n')}</pre></section>`;
+    console.log(r.ok ? 'PASS' : 'FAIL', r.failures);
+  } else { load(); render(); }
 }
 </script>
 </body>
