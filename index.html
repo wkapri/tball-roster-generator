@@ -57,6 +57,11 @@ td:first-child{text-align:left;padding-left:8px;font-weight:700;white-space:nowr
 .fz.bat rect{fill:var(--bat)}.fz.bat text{fill:var(--bat-ink)}.fz.in rect{fill:var(--in)}.fz.out rect{fill:var(--out)}.fz.in text,.fz.out text{fill:#fff}
 .fz.gone rect{fill:none;stroke:var(--mute);stroke-dasharray:4 4;opacity:.6}.fz.gone text{fill:var(--mute);opacity:.6}
 p.bench{margin:12px 0 0;padding:0;font-size:14px;color:var(--mute)}p.bench span{background:var(--bench);color:var(--bench-ink);font-weight:700;padding:4px 12px;border-radius:999px;margin-left:6px}
+button.pos{border:0;width:100%;font-family:inherit;cursor:pointer}
+.pos.sit{background:var(--line);color:var(--mute)}
+.pos.ed::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-left:4px;vertical-align:middle}
+.sheet{margin:12px 0 0}.sheet .bar{margin-top:8px}.sheet small{font-weight:400;opacity:.8}
+p.bench span.o{background:var(--line);color:var(--mute)}
 footer{max-width:760px;margin:0 auto;padding:0 16px 24px;text-align:right}
 </style>
 </head>
@@ -113,7 +118,7 @@ function genInning(present, history) {
 
 const KEY = 'tball-roster-v1';
 const MIN_PLAYERS = 6;
-const fresh = () => ({ absent: [], order: null, innings: [], pending: null, error: null });
+const fresh = () => ({ absent: [], order: null, innings: [], pending: null, error: null, orig: {} }); // orig: inning index -> lineup before manual edits
 let state = fresh();
 let lastAccept = 0;
 const present = () => PLAYERS.filter(p => !state.absent.includes(p));
@@ -147,6 +152,7 @@ function startGame() {
 }
 function regenerate() {
   if (!state.pending && !state.error) return;
+  if (state.order !== null) delete state.orig[state.innings.length];
   state.pending = state.order === null ? genOrder(present()) : nextInning();
   commit();
 }
@@ -165,6 +171,29 @@ function undo() {
   commit();
 }
 function reset() { state = fresh(); commit(); }
+
+// Player `out` sits out inning map `map`; `sub` (a benched player, a fielder, or null) takes their position.
+// A fielding sub leaves their old spot empty. Returns a new map.
+function subOut(map, out, sub) {
+  const m = { ...map }, pos = m[out];
+  m[out] = 'Out';
+  if (sub) m[sub] = pos;
+  return m;
+}
+const inningMap = (i) => i < state.innings.length ? state.innings[i] : (state.order && i === state.innings.length ? state.pending : null);
+function setInning(i, m) { if (i < state.innings.length) state.innings[i] = m; else state.pending = m; }
+function applySub(i, out, sub) {
+  const m = inningMap(i);
+  if (!m) return;
+  if (!state.orig[i]) state.orig[i] = { ...m };
+  setInning(i, subOut(m, out, sub));
+  commit();
+}
+function revertInning(i) {
+  if (!state.orig[i]) return;
+  setInning(i, state.orig[i]); delete state.orig[i];
+  commit();
+}
 
 function runSelfTest() {
   testing = true;
@@ -212,15 +241,26 @@ function runSelfTest() {
   reset(); check(JSON.stringify(state) === JSON.stringify(fresh()), 'reset');
   load('{bad'); check(JSON.stringify(state) === JSON.stringify(fresh()), 'garbage json');
   load('{"absent":"x","innings":[]}'); check(JSON.stringify(state) === JSON.stringify(fresh()), 'bad shape');
+  const sm = { A: 'Pitcher', B: 'Bench', C: 'Left Field' };
+  const a = subOut(sm, 'A', 'B'); check(a.A === 'Out' && a.B === 'Pitcher' && a.C === 'Left Field', 'bench sub takes position');
+  const b = subOut(sm, 'A', 'C'); check(b.A === 'Out' && b.C === 'Pitcher' && !Object.values(b).includes('Left Field'), 'outfield sub leaves old spot empty');
+  const c = subOut(sm, 'A', null); check(c.A === 'Out' && !Object.values(c).includes('Pitcher'), 'leave empty');
+  check(sm.A === 'Pitcher', 'subOut must not mutate');
+  state = fresh(); startGame(); lastAccept = 0; accept();
+  const who = Object.keys(state.pending)[0], was = state.pending[who];
+  applySub(0, who, null);
+  check(state.pending[who] === 'Out' && state.orig[0][who] === was, 'applySub edits pending and keeps original');
+  revertInning(0);
+  check(state.pending[who] === was && !state.orig[0], 'revertInning restores');
   state = fresh(); testing = false;
   return { ok: failures.length === 0, failures };
 }
-const ZONE = { Pitcher: 'bat', Catcher: 'bat', '1st Base': 'in', '2nd Base': 'in', '3rd Base': 'in', Shortstop: 'in', 'Left Field': 'out', Centrefield: 'out', 'Right Field': 'out', Bench: 'bench' };
-const ABBR = { Pitcher: 'P', Catcher: 'C', '1st Base': '1B', '2nd Base': '2B', '3rd Base': '3B', Shortstop: 'SS', 'Left Field': 'LF', Centrefield: 'CF', 'Right Field': 'RF', Bench: 'Bench' };
+const ZONE = { Pitcher: 'bat', Catcher: 'bat', '1st Base': 'in', '2nd Base': 'in', '3rd Base': 'in', Shortstop: 'in', 'Left Field': 'out', Centrefield: 'out', 'Right Field': 'out', Bench: 'bench', Out: 'sit' };
+const ABBR = { Pitcher: 'P', Catcher: 'C', '1st Base': '1B', '2nd Base': '2B', '3rd Base': '3B', Shortstop: 'SS', 'Left Field': 'LF', Centrefield: 'CF', 'Right Field': 'RF', Bench: 'Bench', Out: 'Out' };
 const ORD = ['1st', '2nd', '3rd', '4th'];
 // box centres in the 680x540 field viewBox
 const POS_XY = { Pitcher: [340, 362], Catcher: [340, 510], '1st Base': [544, 372], '2nd Base': [410, 272], '3rd Base': [136, 372], Shortstop: [270, 272], 'Left Field': [132, 172], Centrefield: [340, 92], 'Right Field': [548, 172] };
-let view = 'table', fieldInn = null, seenInn = -1; // display-only, not saved
+let view = 'table', fieldInn = null, seenInn = -1, sel = null; // display-only, not saved; sel = {i, p} cell being edited
 
 function fieldSvg(map) {
   const who = {};
@@ -252,7 +292,11 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
     const m = i < s.innings.length ? s.innings[i] : (i === inn ? s.pending : null);
     const v = m && m[p];
     const pv = i === inn && s.pending ? 'pv' : '';
-    return v ? `<td class="${pv}"><span class="pos ${ZONE[v]}"><span class="fu">${v}</span><span class="ab">${ABBR[v]}</span></span></td>` : `<td class="${pv}"><span class="empty">–</span></td>`;
+    if (!v) return `<td class="${pv}"><span class="empty">–</span></td>`;
+    const label = `<span class="fu">${v}</span><span class="ab">${ABBR[v]}</span>`;
+    if (v === 'Bench') return `<td class="${pv}"><span class="pos bench">${label}</span></td>`;
+    const ed = s.orig[i] && s.orig[i][p] !== v ? ' ed' : '';
+    return `<td class="${pv}"><button class="pos ${ZONE[v]}${ed}" data-ci="${i}" data-p="${p}">${label}</button></td>`;
   };
   const body = rows.map((p, r) => `<tr class="${s.order === null ? 'pv' : ''}"><td><span class="no">${r + 1}</span>${p}</td>${ORD.map((_, i) => cell(p, i)).join('')}</tr>`).join('');
   const away = s.absent.length ? `<p class="away">Out today: <b>${s.absent.join(', ')}</b></p>` : '';
@@ -266,12 +310,27 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
   const showField = view === 'field' && avail > 0;
   const fm = fi < s.innings.length ? s.innings[fi] : s.pending;
   const toggle = avail > 0 ? `<div class="views"><button class="pill ${showField ? '' : 'on'}" data-v="table">Table</button><button class="pill ${showField ? 'on' : ''}" data-v="field">Field</button><span class="sp"></span>${showField ? ORD.map((o, i) => `<button class="pill ${i === fi ? 'on' : ''}" data-i="${i}" ${i < avail ? '' : 'disabled'}>${o}</button>`).join('') : ''}</div>` : '';
+  const sm = sel && !showField ? inningMap(sel.i) : null;
+  if (!sm || !sm[sel.p]) sel = null;
+  const sheet = sel ? (() => {
+    const cur = sm[sel.p], covers = cur === 'Out' ? '' : '<p>Who covers?</p><div class="bar">' +
+      Object.keys(sm).filter(q => sm[q] === 'Bench').map(q => `<button class="btn" data-sub="${q}">${q} <small>from bench</small></button>`).join('') +
+      Object.keys(sm).filter(q => q !== sel.p && OUTFIELD.includes(sm[q])).map(q => `<button class="btn" data-sub="${q}">${q} <small>leaves ${sm[q]} empty</small></button>`).join('') +
+      '<button class="btn" data-sub="">Leave empty</button></div>';
+    return `<section class="panel sheet"><h2 class="disp">${sel.p}, ${ORD[sel.i]} inning</h2>${cur === 'Out' ? '<p>Sitting out.</p>' : `<p>${cur} · sits out</p>`}${covers}<div class="bar">${s.orig[sel.i] ? '<button class="btn" id="rv">Undo change</button>' : ''}<button class="link" id="cx">Cancel</button></div></section>`;
+  })() : '';
   const benched = showField ? Object.keys(fm).filter(p => fm[p] === 'Bench') : [];
-  const main = showField ? fieldSvg(fm) + (benched.length ? `<p class="bench">Bench: ${benched.map(p => `<span>${p}</span>`).join('')}</p>` : '') : `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  const outs = showField ? Object.keys(fm).filter(p => fm[p] === 'Out') : [];
+  const chips = (label, list, cls) => list.length ? `<p class="bench">${label}: ${list.map(p => `<span class="${cls}">${p}</span>`).join('')}</p>` : '';
+  const main = showField ? fieldSvg(fm) + chips('Bench', benched, '') + chips('Out', outs, 'o') : `<table><thead>${head}</thead><tbody>${body}</tbody></table>${sheet}`;
   app.innerHTML = `<section class="panel"><h2 class="disp">${title}</h2><p>${hint}</p>${err}${away}
     <div class="bar">${s.pending ? `<button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button>` : ''}<button class="link" id="un">Undo</button></div></section><div id="v" style="min-height:${keepH || 0}px">${toggle}${main}</div>`;
   const on = (id, f) => { const e = app.querySelector(id); if (e) e.onclick = f; };
   on('#ac', accept); on('#rg', regenerate); on('#un', undo);
+  app.querySelectorAll('[data-ci]').forEach(b => b.onclick = () => { const h = app.querySelector('#v').offsetHeight; const n = { i: +b.dataset.ci, p: b.dataset.p }; sel = sel && sel.i === n.i && sel.p === n.p ? null : n; render(h); });
+  app.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { const { i, p } = sel; sel = null; applySub(i, p, b.dataset.sub || null); });
+  on('#rv', () => { const i = sel.i; sel = null; revertInning(i); });
+  on('#cx', () => { sel = null; render(); });
   app.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { const h = app.querySelector('#v').offsetHeight; view = b.dataset.v; render(h); });
   app.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { const h = app.querySelector('#v').offsetHeight; fieldInn = +b.dataset.i; render(h); });
 }
