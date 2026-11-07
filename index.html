@@ -49,6 +49,17 @@ td:first-child{text-align:left;padding-left:8px;font-weight:700;white-space:nowr
 .empty{color:var(--line)}
 .ab{display:inline}.fu{display:none}
 @media(min-width:560px){.ab{display:none}.fu{display:inline}.pos{font-size:13px;padding:8px 4px}th:first-child{width:24%}}
+.views{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap;align-items:center}.views .sp{flex:1}
+.pill{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.pill.on{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
+.pill:disabled{opacity:.4;cursor:not-allowed}.pill:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.fld{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);background:var(--card)}
+.grass{fill:#cfe9d6}.dirt{fill:#e8d8b8}.base rect{fill:#fff;stroke:#8a7a55}
+@media(prefers-color-scheme:dark){.grass{fill:#14452f}.dirt{fill:#5a4a2a}}
+.fz text{text-anchor:middle;font-family:system-ui,sans-serif}.fz .l{font-size:14px}.fz .n{font-size:22px;font-weight:700}
+.fz.bat rect{fill:var(--bat)}.fz.bat text{fill:var(--bat-ink)}.fz.in rect{fill:var(--in)}.fz.out rect{fill:var(--out)}.fz.in text,.fz.out text{fill:#fff}
+.fz.gone rect{fill:none;stroke:var(--mute);stroke-dasharray:4 4;opacity:.6}.fz.gone text{fill:var(--mute);opacity:.6}
+p.bench{margin:12px 0 0;padding:0;font-size:14px;color:var(--mute)}.bench span{background:var(--bench);color:var(--bench-ink);font-weight:700;padding:4px 12px;border-radius:999px;margin-left:6px}
 footer{max-width:760px;margin:0 auto;padding:0 16px 24px;text-align:right}
 </style>
 </head>
@@ -190,6 +201,7 @@ function runSelfTest() {
   }
   // state layer
   const check = (c, m) => { if (!c) fail(m); };
+  check(POSITIONS.every(p => POS_XY[p] && ZONE[p]), 'every position needs field coordinates and a zone');
   state = fresh(); PLAYERS.slice(0, 6).forEach(toggleAbsent); startGame();
   check(state.error && state.order === null && !state.pending, 'fewer than 6 present must error');
   state = fresh(); startGame(); accept(); accept();
@@ -209,6 +221,19 @@ function runSelfTest() {
 const ZONE = { Pitcher: 'bat', Catcher: 'bat', '1st Base': 'in', '2nd Base': 'in', '3rd Base': 'in', Shortstop: 'in', 'Left Field': 'out', Centrefield: 'out', 'Right Field': 'out', Bench: 'bench' };
 const ABBR = { Pitcher: 'P', Catcher: 'C', '1st Base': '1B', '2nd Base': '2B', '3rd Base': '3B', Shortstop: 'SS', 'Left Field': 'LF', Centrefield: 'CF', 'Right Field': 'RF', Bench: 'Bench' };
 const ORD = ['1st', '2nd', '3rd', '4th'];
+// box centres in the 680x540 field viewBox
+const POS_XY = { Pitcher: [340, 362], Catcher: [340, 510], '1st Base': [544, 372], '2nd Base': [450, 284], '3rd Base': [136, 372], Shortstop: [230, 284], 'Left Field': [132, 172], Centrefield: [340, 92], 'Right Field': [548, 172] };
+let view = 'table', fieldInn = null, seenInn = -1; // display-only, not saved
+
+function fieldSvg(map) {
+  const who = {};
+  for (const p in map) who[map[p]] = p;
+  const boxes = POSITIONS.map(pos => {
+    const [x, y] = POS_XY[pos], name = who[pos];
+    return `<g class="fz ${name ? ZONE[pos] : 'gone'}"><rect x="${x - 62}" y="${y - 28}" width="124" height="56" rx="10"/><text class="l" x="${x}" y="${y - 7}">${pos}</text><text class="n" x="${x}" y="${y + 17}">${name || ''}</text></g>`;
+  }).join('');
+  return `<svg class="fld" viewBox="0 0 680 550" role="img" aria-label="Field positions"><path class="grass" d="M340 500 L40 200 A420 420 0 0 1 640 200 Z"/><path class="dirt" d="M340 470 L475 345 L340 220 L205 345 Z"/><g class="base"><rect x="333" y="463" width="14" height="14" rx="2"/><rect x="469" y="339" width="12" height="12" rx="2"/><rect x="334" y="214" width="12" height="12" rx="2"/><rect x="199" y="339" width="12" height="12" rx="2"/></g>${boxes}</svg>`;
+}
 
 function render() {
   const app = document.getElementById('app');
@@ -241,11 +266,20 @@ function render() {
   if (s.order === null) { title = 'Batting order'; hint = 'Accept it, or regenerate for a new one.'; acceptLabel = 'Accept order'; }
   else if (s.pending || s.error) { title = `${ORD[inn]} inning`; hint = 'Accept it, or regenerate for a new one.'; acceptLabel = `Accept ${ORD[inn]} inning`; }
   else { title = 'Lineup is set'; hint = 'Good luck, Thunderbolts!'; }
+  const avail = s.innings.length + (s.order && s.pending ? 1 : 0); // innings that have a lineup to draw
+  if (inn !== seenInn) { seenInn = inn; fieldInn = null; }
+  const fi = fieldInn !== null && fieldInn < avail ? fieldInn : avail - 1;
+  const showField = view === 'field' && avail > 0;
+  const fm = fi < s.innings.length ? s.innings[fi] : s.pending;
+  const toggle = avail > 0 ? `<div class="views"><button class="pill ${showField ? '' : 'on'}" data-v="table">Table</button><button class="pill ${showField ? 'on' : ''}" data-v="field">Field</button><span class="sp"></span>${showField ? ORD.map((o, i) => `<button class="pill ${i === fi ? 'on' : ''}" data-i="${i}" ${i < avail ? '' : 'disabled'}>${o}</button>`).join('') : ''}</div>` : '';
+  const benched = showField ? Object.keys(fm).filter(p => fm[p] === 'Bench') : [];
+  const main = showField ? fieldSvg(fm) + (benched.length ? `<p class="bench">Bench: ${benched.map(p => `<span>${p}</span>`).join('')}</p>` : '') : `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
   app.innerHTML = stepper + `<section class="panel"><h2 class="disp">${title}</h2><p>${hint}</p>${err}${away}
-    <div class="bar">${s.pending ? `<button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button>` : ''}<button class="link" id="un">Undo</button></div></section>
-    <table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+    <div class="bar">${s.pending ? `<button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button>` : ''}<button class="link" id="un">Undo</button></div></section>${toggle}${main}`;
   const on = (id, f) => { const e = app.querySelector(id); if (e) e.onclick = f; };
   on('#ac', accept); on('#rg', regenerate); on('#un', undo);
+  app.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { view = b.dataset.v; render(); });
+  app.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { fieldInn = +b.dataset.i; render(); });
 }
 
 if (typeof document !== 'undefined') {
