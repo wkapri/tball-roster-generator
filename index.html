@@ -62,7 +62,9 @@ p.bench{margin:12px 0 0;padding:0;font-size:14px;color:var(--mute)}p.bench span{
 button.pos{border:0;width:100%;font-family:inherit;cursor:pointer}
 .pos.sit{background:var(--line);color:var(--mute)}
 .pos.ed::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-left:4px;vertical-align:middle}
-.sheet{margin:12px 0 0}.sheet .bar{margin-top:8px}.sheet small{font-weight:400;opacity:.8}
+.scrim{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(7,18,43,.55)}
+.sheet{width:100%;max-width:420px;max-height:90vh;overflow:auto;margin:0}.sheet .bar{margin-top:8px}.sheet small{font-weight:400;opacity:.8}
+button.x{background:none;border:0;color:var(--mute);font-size:30px;line-height:1;min-width:44px;min-height:44px;cursor:pointer}
 p.bench span.o{background:var(--line);color:var(--mute)}
 footer{max-width:760px;margin:0 auto;padding:0 16px 24px;text-align:right}
 </style>
@@ -317,9 +319,9 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
   const sheet = sel ? (() => {
     const cur = sm[sel.p], covers = cur === 'Out' ? '' : '<p>Who covers?</p><div class="bar">' +
       Object.keys(sm).filter(q => sm[q] === 'Bench').map(q => `<button class="btn" data-sub="${q}">${q} <small>from bench</small></button>`).join('') +
-      Object.keys(sm).filter(q => q !== sel.p && OUTFIELD.includes(sm[q])).map(q => `<button class="btn" data-sub="${q}">${q} <small>leaves ${sm[q]} empty</small></button>`).join('') +
+      Object.keys(sm).filter(q => q !== sel.p && OUTFIELD.includes(sm[q])).map(q => `<button class="btn" data-sub="${q}">${q} <small>from ${sm[q]}</small></button>`).join('') +
       '<button class="btn" data-sub="">Leave empty</button></div>';
-    return `<section class="panel sheet"><h2 class="disp">${sel.p}, ${ORD[sel.i]} inning</h2>${cur === 'Out' ? '<p>Sitting out.</p>' : `<p>${cur} · sits out</p>`}${covers}<div class="bar">${s.orig[sel.i] ? '<button class="btn" id="rv">Undo change</button>' : ''}<button class="link" id="cx">Cancel</button></div></section>`;
+    return `<div class="scrim" id="scrim"><section class="panel sheet" role="dialog" aria-modal="true" aria-label="${sel.p}, ${ORD[sel.i]} inning"><div class="head"><h2 class="disp">${sel.p}, ${ORD[sel.i]} inning</h2><button class="x" id="cx" aria-label="Close">&times;</button></div>${cur === 'Out' ? '<p>Sitting out.</p>' : `<p>${cur} · sits out</p>`}${covers}${s.orig[sel.i] ? '<div class="bar"><button class="btn" id="rv">Undo change</button></div>' : ''}</section></div>`;
   })() : '';
   const benched = showField ? Object.keys(fm).filter(p => fm[p] === 'Bench') : [];
   const outs = showField ? Object.keys(fm).filter(p => fm[p] === 'Out') : [];
@@ -333,11 +335,14 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
   app.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { const { i, p } = sel; sel = null; applySub(i, p, b.dataset.sub || null); });
   on('#rv', () => { const i = sel.i; sel = null; revertInning(i); });
   on('#cx', () => { sel = null; render(); });
+  on('#scrim', (e) => { if (e.target.id === 'scrim') { sel = null; render(); } });
+  document.body.style.overflow = sel ? 'hidden' : '';
   app.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { const h = app.querySelector('#v').offsetHeight; view = b.dataset.v; render(h); });
   app.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { const h = app.querySelector('#v').offsetHeight; fieldInn = +b.dataset.i; render(h); });
 }
 
 if (typeof document !== 'undefined') {
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sel) { sel = null; render(); } });
   document.getElementById('rs').onclick = () => { if (confirm('Clear this game and start over?')) reset(); };
   if (location.hash === '#test') {
     const r = runSelfTest();
