@@ -120,7 +120,7 @@ function load(raw) {
 }
 let testing = false;
 function save() { if (testing) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
-function commit() { save(); if (typeof render === 'function') render(); }
+function commit() { save(); if (typeof document !== 'undefined') render(); }
 
 function nextInning() {
   const r = genInning(present(), state.innings);
