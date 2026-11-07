@@ -18,7 +18,9 @@ header{background:linear-gradient(135deg,var(--navy),var(--royal));color:#fff;pa
 .brand p{margin:2px 0 0;font-size:13px;opacity:.85}
 main{max-width:760px;margin:0 auto;padding:16px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
-.panel h2{margin:0 0 4px;font-size:24px}
+.panel h2{margin:0;font-size:24px}
+.head{display:flex;justify-content:space-between;align-items:center}.head .link{min-height:36px}
+.panel .head~p.away,.panel .head~p.err{margin-top:8px}
 .panel p{margin:0 0 12px;color:var(--mute)}
 .chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
 .chip{min-height:48px;border-radius:12px;border:2px solid var(--royal);background:var(--royal);color:#fff;font:inherit;font-weight:700;cursor:pointer}
@@ -300,10 +302,10 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
   };
   const body = rows.map((p, r) => `<tr class="${s.order === null ? 'pv' : ''}"><td><span class="no">${r + 1}</span>${p}</td>${ORD.map((_, i) => cell(p, i)).join('')}</tr>`).join('');
   const away = s.absent.length ? `<p class="away">Out today: <b>${s.absent.join(', ')}</b></p>` : '';
-  let title, hint, acceptLabel;
-  if (s.order === null) { title = 'Batting order'; hint = 'Accept it, or regenerate for a new one.'; acceptLabel = 'Accept order'; }
-  else if (s.pending || s.error) { title = `${ORD[inn]} inning`; hint = 'Accept it, or regenerate for a new one.'; acceptLabel = `Accept ${ORD[inn]} inning`; }
-  else { title = 'Lineup is set'; hint = 'Good luck, Thunderbolts!'; }
+  let title, acceptLabel;
+  if (s.order === null) { title = 'Batting order'; acceptLabel = 'Accept order'; }
+  else if (s.pending || s.error) { title = `${ORD[inn]} inning`; acceptLabel = `Accept ${ORD[inn]}`; }
+  else { title = 'Lineup is set'; }
   const avail = s.innings.length + (s.order && s.pending ? 1 : 0); // innings that have a lineup to draw
   if (inn !== seenInn) { seenInn = inn; fieldInn = null; }
   const fi = fieldInn !== null && fieldInn < avail ? fieldInn : avail - 1;
@@ -323,8 +325,8 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
   const outs = showField ? Object.keys(fm).filter(p => fm[p] === 'Out') : [];
   const chips = (label, list, cls) => list.length ? `<p class="bench">${label}: ${list.map(p => `<span class="${cls}">${p}</span>`).join('')}</p>` : '';
   const main = showField ? fieldSvg(fm) + chips('Bench', benched, '') + chips('Out', outs, 'o') : `<table><thead>${head}</thead><tbody>${body}</tbody></table>${sheet}`;
-  app.innerHTML = `<section class="panel"><h2 class="disp">${title}</h2><p>${hint}</p>${err}${away}
-    <div class="bar">${s.pending ? `<button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button>` : ''}<button class="link" id="un">Undo</button></div></section><div id="v" style="min-height:${keepH || 0}px">${toggle}${main}</div>`;
+  app.innerHTML = `<section class="panel"><div class="head"><h2 class="disp">${title}</h2><button class="link" id="un">Undo</button></div>${err}${away}
+    ${s.pending ? `<div class="bar"><button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button></div>` : ''}</section><div id="v" style="min-height:${keepH || 0}px">${toggle}${main}</div>`;
   const on = (id, f) => { const e = app.querySelector(id); if (e) e.onclick = f; };
   on('#ac', accept); on('#rg', regenerate); on('#un', undo);
   app.querySelectorAll('[data-ci]').forEach(b => b.onclick = () => { const h = app.querySelector('#v').offsetHeight; const n = { i: +b.dataset.ci, p: b.dataset.p }; sel = sel && sel.i === n.i && sel.p === n.p ? null : n; render(h); });
