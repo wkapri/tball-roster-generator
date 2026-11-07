@@ -16,10 +16,6 @@ header{background:linear-gradient(135deg,var(--navy),var(--royal));color:#fff;pa
 .brand h1{margin:0;font-size:clamp(22px,6vw,32px);line-height:1;text-transform:uppercase}
 .brand p{margin:2px 0 0;font-size:13px;opacity:.85}
 main{max-width:760px;margin:0 auto;padding:16px}
-.steps{display:flex;gap:6px;margin:0 0 14px;padding:0;list-style:none}
-.steps li{flex:1;text-align:center;font-size:12px;padding:6px 2px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mute)}
-.steps li.done{background:var(--royal);border-color:var(--royal);color:#fff}
-.steps li.now{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
 .panel h2{margin:0 0 4px;font-size:24px}
 .panel p{margin:0 0 12px;color:var(--mute)}
@@ -238,13 +234,10 @@ function fieldSvg(map) {
 function render(keepH) { // keepH: px height to hold the view area at, so toggling views doesn't shift the scroll position
   const app = document.getElementById('app');
   const s = state, atPlayers = s.order === null && !s.pending;
-  const step = s.order === null ? (s.pending ? 1 : 0) : (s.pending || s.error ? s.innings.length + 2 : 6);
-  const labels = ['Players', 'Order', ...ORD];
-  const stepper = '<ol class="steps">' + labels.map((l, i) => `<li class="${i < step ? 'done' : i === step ? 'now' : ''}">${l}</li>`).join('') + '</ol>';
   const err = s.error ? `<p class="err" role="alert">${s.error}</p>` : '';
   if (atPlayers) {
     const n = present().length;
-    app.innerHTML = stepper + `<section class="panel"><h2 class="disp">Who's here today?</h2><p>Tap anyone who's missing.</p>${err}
+    app.innerHTML = `<section class="panel"><h2 class="disp">Who's here today?</h2><p>Tap anyone who's missing.</p>${err}
       <div class="chips">${PLAYERS.map(p => `<button class="chip" aria-pressed="${s.absent.includes(p)}" data-p="${p}">${p}</button>`).join('')}</div>
       <div class="bar"><button class="btn go" id="go" ${n < MIN_PLAYERS ? 'disabled' : ''}>Continue with ${n} players</button></div></section>`;
     app.querySelectorAll('.chip').forEach(b => b.onclick = () => toggleAbsent(b.dataset.p));
@@ -274,7 +267,7 @@ function render(keepH) { // keepH: px height to hold the view area at, so toggli
   const toggle = avail > 0 ? `<div class="views"><button class="pill ${showField ? '' : 'on'}" data-v="table">Table</button><button class="pill ${showField ? 'on' : ''}" data-v="field">Field</button><span class="sp"></span>${showField ? ORD.map((o, i) => `<button class="pill ${i === fi ? 'on' : ''}" data-i="${i}" ${i < avail ? '' : 'disabled'}>${o}</button>`).join('') : ''}</div>` : '';
   const benched = showField ? Object.keys(fm).filter(p => fm[p] === 'Bench') : [];
   const main = showField ? fieldSvg(fm) + (benched.length ? `<p class="bench">Bench: ${benched.map(p => `<span>${p}</span>`).join('')}</p>` : '') : `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
-  app.innerHTML = stepper + `<section class="panel"><h2 class="disp">${title}</h2><p>${hint}</p>${err}${away}
+  app.innerHTML = `<section class="panel"><h2 class="disp">${title}</h2><p>${hint}</p>${err}${away}
     <div class="bar">${s.pending ? `<button class="btn go" id="ac">${acceptLabel}</button><button class="btn" id="rg">Regenerate</button>` : ''}<button class="link" id="un">Undo</button></div></section><div id="v" style="min-height:${keepH || 0}px">${toggle}${main}</div>`;
   const on = (id, f) => { const e = app.querySelector(id); if (e) e.onclick = f; };
   on('#ac', accept); on('#rg', regenerate); on('#un', undo);
