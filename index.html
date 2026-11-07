@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thunderbolts Roster</title>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const PLAYERS = ['Alex','Leo','Alistair','Gus','Harrison','Hamish','Luca','Liam','Caspar','Prim','Jian'];
+const POSITIONS = ['Pitcher','Catcher','1st Base','2nd Base','3rd Base','Shortstop','Left Field','Centrefield','Right Field'];
+const OUTFIELD = ['Left Field','Centrefield','Right Field'];
+
+function shuffle(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const genOrder = (present) => shuffle(present);
+
+// history: accepted innings, each {player: position|'Bench'}. Returns same shape, or null if impossible.
+function genInning(present, history) {
+  const n = present.length;
+  if (n < 6) return null;
+  const drop = n < 9 ? shuffle(OUTFIELD).slice(0, 9 - n) : [];
+  const slots = POSITIONS.filter(p => !drop.includes(p));
+  const everBenched = new Set(history.flatMap(h => present.filter(p => h[p] === 'Bench')));
+  const pool = present.filter(p => !everBenched.has(p));
+  const nBench = Math.max(0, n - 9);
+  if (pool.length < nBench) return null;
+  const bench = shuffle(pool).slice(0, nBench);
+  const fielders = shuffle(present.filter(p => !bench.includes(p)));
+  const out = {};
+  bench.forEach(p => { out[p] = 'Bench'; });
+  const used = new Set();
+  const fill = (i) => {
+    if (i === fielders.length) return true;
+    const p = fielders[i];
+    for (const pos of shuffle(slots)) {
+      if (used.has(pos) || history.some(h => h[p] === pos)) continue;
+      used.add(pos); out[p] = pos;
+      if (fill(i + 1)) return true;
+      used.delete(pos); delete out[p];
+    }
+    return false;
+  };
+  return fill(0) ? out : null;
+}
+
+function runSelfTest() {
+  const failures = [];
+  const fail = (m) => { if (failures.length < 20) failures.push(m); };
+  for (let n = 6; n <= 11; n++) {
+    const present = PLAYERS.slice(0, n);
+    for (let g = 0; g < 1000; g++) {
+      const hist = [];
+      for (let i = 0; i < 4; i++) {
+        const r = genInning(present, hist);
+        if (!r) { fail(`n=${n} inning ${i + 1}: null`); break; }
+        const vals = present.map(p => r[p]);
+        if (vals.some(v => !v)) { fail(`n=${n}: missing player`); break; }
+        const field = vals.filter(v => v !== 'Bench');
+        if (new Set(field).size !== field.length) fail(`n=${n}: duplicate position in inning`);
+        if (field.some(v => !POSITIONS.includes(v))) fail(`n=${n}: bad position`);
+        const wantBench = Math.max(0, n - 9);
+        if (vals.length - field.length !== wantBench) fail(`n=${n}: bench count`);
+        if (n >= 9 && field.length !== 9) fail(`n=${n}: not all positions filled`);
+        if (n < 9) {
+          const dropped = POSITIONS.filter(p => !field.includes(p));
+          if (dropped.length !== 9 - n || dropped.some(p => !OUTFIELD.includes(p))) fail(`n=${n}: bad drop`);
+        }
+        for (const p of present) {
+          if (hist.some(h => h[p] === r[p])) fail(`n=${n}: ${p} repeated ${r[p]}`);
+        }
+        hist.push(r);
+      }
+    }
+  }
+  return { ok: failures.length === 0, failures };
+}
+</script>
+</body>
+</html>
